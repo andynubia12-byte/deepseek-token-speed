@@ -1,20 +1,34 @@
 {
   "manifest_version": 3,
   "name": "DeepSeek Token 速度计",
-  "description": "用 DeepSeek V4.1 Flash 1017 tokenizer 测量网页版的流式输出速度。",
-  "version": "1.0.5",
+  "description": "测量 DeepSeek 网页版的流式输出速度，自动检查官方 V4.1 Flash tokenizer 更新。",
+  "version": "1.1.0",
   "minimum_chrome_version": "111",
   "content_scripts": [
     {
-      "matches": ["https://chat.deepseek.com/*"],
-      "js": ["panel.js"],
+      "matches": [
+        "https://chat.deepseek.com/*"
+      ],
+      "js": [
+        "panel.js"
+      ],
       "run_at": "document_start"
     },
     {
-      "matches": ["https://chat.deepseek.com/*"],
-      "js": ["hook.js"],
+      "matches": [
+        "https://chat.deepseek.com/*"
+      ],
+      "js": [
+        "hook.js"
+      ],
       "world": "MAIN",
       "run_at": "document_start"
     }
-  ]
+  ],
+  "host_permissions": [
+    "https://huggingface.co/*"
+  ],
+  "background": {
+    "service_worker": "update.js"
+  }
 }

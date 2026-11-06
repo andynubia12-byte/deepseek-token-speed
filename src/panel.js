@@ -1,4 +1,4 @@
-import { encode } from './count.js';
+import { checkTokenizerUpdate, replyEncoder } from './count.js';
 
 const channel = 'deepseek-token-speed/v1';
 let active = 0;
@@ -41,11 +41,16 @@ let lastThink;
 let answerCount;
 let thinkCount;
 let countFailed;
+let encode;
+
+checkTokenizerUpdate();
 
 window.addEventListener('message', ({ source, origin, data }) => {
   if (source !== window || origin !== location.origin || data?.channel !== channel) return;
   if (data.kind === 'start' && Number.isSafeInteger(data.id) && data.id > active) {
     active = data.id;
+    encode = replyEncoder();
+    checkTokenizerUpdate();
     metrics.remove();
     metrics.textContent = '';
     lastAnswer = lastThink = '';

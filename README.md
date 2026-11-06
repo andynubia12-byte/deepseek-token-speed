@@ -34,3 +34,11 @@ npm run build
 - Git blob `6a15814dd25c934028034531da744c689f87ff21`
 - SHA-256 `c90dfa01249db1be4245780a052ede752e1361c612ac6d08e2bdada7d599476b`
 - 浏览器分词使用 [Hugging Face Tokenizers.js](https://github.com/huggingface/tokenizers.js) 0.2.0。
+
+## 自动更新 tokenizer
+
+Chrome / Edge 扩展打开 DeepSeek 页面时会后台检查 Hugging Face，持续打开的页面也会在发送新消息时定期检查。所有标签页合计最多每 24 小时尝试联网检查一次，只访问 Hugging Face 的公开模型信息和 tokenizer JSON。
+
+更新来源限于 `deepseek-ai` 发布的 V4.1 Flash 系列，从 1017 起按模型仓库的创建时间选取新版，再按同一个提交下载两份 JSON。扩展检查分词流程是否兼容，并用中英文和表情做试编码和解码。检查通过后保存在本地，从之后的新回复开始使用。网络失败或数据不兼容时继续使用上次通过检查的版本，首次安装时使用内置的 1017。
+
+Hugging Face 的发布进度和网页版的部署进度可能不同。若 DeepSeek 网页切到其他模型系列，需更新扩展的来源配置。Safari 的临时注入没有扩展后台，使用内置 tokenizer。
