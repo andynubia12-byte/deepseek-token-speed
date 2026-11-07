@@ -1,9 +1,10 @@
 {
   "name": "deepseek-token-speed",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "scripts": {
-    "build": "node build.mjs"
+    "build": "node build.mjs",
+    "test": "npm run build && node --test test/*.test.mjs"
   },
   "dependencies": {
     "@huggingface/tokenizers": "0.2.0"

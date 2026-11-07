@@ -4,18 +4,20 @@ export function streamParser(onText, onSearch) {
   let data = [];
   let event = '';
   let path = '';
+  let operation = 'SET';
   let fragments = [];
   let receivedAt;
+  let previousText = '';
 
   function searchChanged() {
-    onSearch(fragments.some(f => f.type === 'TOOL_SEARCH' && f.status === 'WIP'), receivedAt);
+    onSearch(fragments.some(f =>
+      (f.type === 'TOOL_SEARCH' || f.type === 'TOOL_OPEN') && f.status === 'WIP'), receivedAt);
   }
 
   function add(items) {
     for (const item of items) {
       const fragment = { type: item?.type, status: item?.status, content: '' };
       fragments.push(fragment);
-      if (fragment.type === 'TOOL_SEARCH') searchChanged();
       change(fragment, item?.content, 'SET');
     }
   }
@@ -25,25 +27,22 @@ export function streamParser(onText, onSearch) {
     const next = op === 'SET' ? text : fragment.content + text;
     if (next === fragment.content) return;
     fragment.content = next;
-    if (fragment.type === 'RESPONSE' || fragment.type === 'THINK') onText(fragments, receivedAt);
   }
 
   function patch(target, op, value) {
     if (op === 'BATCH' && Array.isArray(value)) {
-      for (const entry of value) patch([target, entry.p].filter(Boolean).join('/'), entry.o, entry.v);
+      for (const entry of value) patch([target, entry.p].filter(Boolean).join('/'), entry.o ?? 'SET', entry.v);
     } else if (target === 'response/fragments' && Array.isArray(value)) {
       if (op === 'SET') {
         fragments = [];
-        searchChanged();
       }
       add(value);
     } else {
       const match = /^response\/fragments\/(-?\d+)\/(content|status)$/.exec(target);
       if (!match) return;
       const fragment = fragments.at(Number(match[1]));
-      if (match[2] === 'status' && fragment?.type === 'TOOL_SEARCH' && typeof value === 'string') {
+      if (match[2] === 'status' && fragment && typeof value === 'string') {
         fragment.status = value;
-        searchChanged();
       } else if (match[2] === 'content' && (!op || op === 'APPEND' || op === 'SET')) {
         change(fragment, value, op);
       }
@@ -62,12 +61,21 @@ export function streamParser(onText, onSearch) {
     const snapshot = message?.v?.response?.fragments;
     if (Array.isArray(snapshot)) {
       fragments = [];
-      searchChanged();
       add(snapshot);
       path = 'response/fragments/-1/content';
+      operation = 'APPEND';
     } else if (message && Object.hasOwn(message, 'v')) {
       if (typeof message.p === 'string') path = message.p.replace(/^\//, '');
-      patch(path, message.o, message.v);
+      if (typeof message.o === 'string') operation = message.o;
+      patch(path, operation, message.v);
+    }
+    searchChanged();
+    // Full-list replacements also repeat old text. Only new/changed output moves the clock.
+    const text = JSON.stringify(['THINK', 'RESPONSE'].map(type =>
+      fragments.filter(f => f.type === type).map(f => f.content).join('')));
+    if (text !== previousText) {
+      previousText = text;
+      onText(fragments, receivedAt);
     }
     return false;
   }
