@@ -1,4 +1,4 @@
-# DeepSeek Token 速度计
+# DeepSeek 网页端 Token 速度计
 
 适用于 Chrome 和 Edge 的 Manifest V3 扩展。
 
